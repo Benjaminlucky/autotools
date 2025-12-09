@@ -1,21 +1,9 @@
 [build]
-  # Specify the base directory where the build command should run (your frontend folder)
-  base = "client/"
+command = "npm run build"
+publish = ".netlify/build"
 
-  # The command to execute the Next.js build
-  command = "npm run build"
-
-  # The directory that Netlify should serve after the build is complete
-  # This usually defaults correctly for Next.js, but is good practice to specify.
-  publish = ".next"
-
-# Configuration for redirects, which is essential for Next.js routing on Netlify
-# You can often skip this part if the Next.js build plugin handles it, 
-# but including it ensures correct routing on legacy Next.js deployments.
-# [[redirects]]
-#   from = "/*"
-#   to = "/index.html"
-#   status = 200
+[[plugins]]
+package = "@netlify/plugin-nextjs"
 
 [build.environment]
 NETLIFY_BLOBS_WRITE_DISABLED = "true"
