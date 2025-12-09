@@ -82,3 +82,5 @@ lerna-debug.log*
 # Yarn v2+ files
 .yarn/cache
 .pnp.*
+# Local Netlify folder
+.netlify

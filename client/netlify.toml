@@ -16,3 +16,6 @@
 #   from = "/*"
 #   to = "/index.html"
 #   status = 200
+
+[build.environment]
+NETLIFY_BLOBS_WRITE_DISABLED = "true"
