@@ -1,7 +1,8 @@
 "use client";
 import CheckoutSteps from "@/components/checkoutSteps";
+import { useCart } from "@/context/CartContext.js";
 // FIX: Change import name from useCartStore to useCart
-import { useCart } from "@/context/cartStore";
+
 import { useRouter } from "next/navigation";
 
 export default function PaymentPage() {
