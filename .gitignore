@@ -1,0 +1,84 @@
+# -------------------------------------------------------------------
+# Environment & Configuration
+# -------------------------------------------------------------------
+
+# Keep sensitive environment variables secure
+.env
+.env.local
+.env.development
+.env.production
+
+# Configuration secrets (e.g., NextAuth secret keys)
+.env.*.local
+
+# Local config files (specific to your machine/IDE)
+.vscode/
+
+# -------------------------------------------------------------------
+# Dependencies & Build Output
+# -------------------------------------------------------------------
+
+# Node.js dependencies
+/node_modules
+
+# Next.js build output
+/.next/
+/out/
+
+# Production history file
+.next/cache
+.next/static
+
+# Temporary files created during development
+/tmp
+
+# -------------------------------------------------------------------
+# IDE & System Files
+# -------------------------------------------------------------------
+
+# macOS system files
+.DS_Store
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+
+# JetBrains/WebStorm IDE files
+.idea/
+
+# VS Code config (if not shared)
+# Only ignore if you don't want to share workspace settings
+# .vscode/*
+# !.vscode/settings.json
+# !.vscode/tasks.json
+# !.vscode/launch.json
+# !.vscode/extensions.json
+
+# -------------------------------------------------------------------
+# Logs & Testing
+# -------------------------------------------------------------------
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Coverage directory
+/coverage
+
+# Testing frameworks temporary files
+/.nyc_output
+/test/temp
+
+# -------------------------------------------------------------------
+# Miscellaneous
+# -------------------------------------------------------------------
+
+# Local database files
+*.sqlite
+*.db
+
+# Yarn v2+ files
+.yarn/cache
+.pnp.*
