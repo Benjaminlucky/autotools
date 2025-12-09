@@ -1,11 +1,13 @@
 "use client";
 import CheckoutSteps from "@/components/checkoutSteps";
-import { useCartStore } from "@/context/cartStore";
+// FIX: Change import name from useCartStore to useCart
+import { useCart } from "@/context/cartStore";
 import { useRouter } from "next/navigation";
 
 export default function PaymentPage() {
   const router = useRouter();
-  const { cart, clearCart } = useCartStore();
+  // FIX: Change usage name from useCartStore() to useCart()
+  const { cart, clearCart } = useCart();
   const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
 
   const payNow = () => {
