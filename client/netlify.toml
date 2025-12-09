@@ -1,9 +1,10 @@
 [build]
-command = "npm run build"
-publish = ".netlify/build"
+  command = "npm run build"
+  publish = ".next"                 # publish from .next
+  # do NOT set publish = ".netlify/build" manually if plugin controls output
 
 [[plugins]]
-package = "@netlify/plugin-nextjs"
+  package = "@netlify/plugin-nextjs"
 
 [build.environment]
-NETLIFY_BLOBS_WRITE_DISABLED = "true"
+  NETLIFY_BLOBS_WRITE_DISABLED = "true"
