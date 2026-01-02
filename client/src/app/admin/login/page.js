@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import api from "@/lib/api.js";
 
 // Theme Colors
 const theme = {
@@ -18,17 +18,18 @@ const theme = {
 export default function AdminLogin() {
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/admin/login",
-        form
-      );
+      // Now using the api instance - it automatically uses correct BASE_URL
+      const res = await api.post("/api/admin/login", form);
 
       localStorage.setItem("adminToken", res.data.token);
 
@@ -44,10 +45,13 @@ export default function AdminLogin() {
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || "Invalid credentials. Please try again.";
+
       // Error Toast
       toast.error(errorMessage, {
         style: { backgroundColor: theme.colorPrimary, color: "white" },
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -56,6 +60,8 @@ export default function AdminLogin() {
       className="min-h-screen flex items-center justify-center p-4"
       style={{ backgroundColor: theme.colorBackground }}
     >
+      <ToastContainer position="top-right" autoClose={3000} />
+
       <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl transition duration-300 hover:shadow-3xl">
         <h2
           className="text-4xl font-extrabold mb-8 text-center"
@@ -78,6 +84,7 @@ export default function AdminLogin() {
             onChange={handleChange}
             value={form.email}
             required
+            disabled={loading}
           />
 
           {/* Password Input */}
@@ -93,18 +100,20 @@ export default function AdminLogin() {
             onChange={handleChange}
             value={form.password}
             required
+            disabled={loading}
           />
 
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full p-3 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-opacity-50"
+            disabled={loading}
+            className="w-full p-3 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               backgroundColor: theme.colorPrimary,
               "--tw-ring-color": theme.colorPrimary,
             }}
           >
-            Log In
+            {loading ? "Logging in..." : "Log In"}
           </button>
         </form>
 
