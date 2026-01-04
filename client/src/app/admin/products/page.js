@@ -4,13 +4,12 @@ import { useState } from "react";
 import useSWR from "swr";
 import { FaPlus, FaSearch, FaEdit, FaTrash, FaTimes } from "react-icons/fa";
 import AdminDashboard from "../dashboard/page";
-import axios from "axios";
 import { toast } from "react-toastify";
+import api from "@/lib/api.js";
 
 // Define a common currency formatter for consistency
 const formatCurrency = (amount) => {
   if (amount === undefined || amount === null) return "N/A";
-  // Assuming ₦ is the Nigerian Naira symbol
   return `₦${Number(amount).toLocaleString()}`;
 };
 
@@ -20,8 +19,8 @@ const theme = {
   colorButton: "#1e3a8a",
 };
 
-// SWR Fetcher
-const fetcher = (url) => axios.get(url).then((res) => res.data);
+// SWR Fetcher using the api instance
+const fetcher = (url) => api.get(url).then((res) => res.data);
 
 // Modal Initial Form
 const initialForm = {
@@ -37,7 +36,7 @@ const initialForm = {
   cost_price: "",
 };
 
-// Input Component (Updated styling)
+// Input Component
 const FormInput = ({
   name,
   value,
@@ -61,7 +60,165 @@ const FormInput = ({
   />
 );
 
-// Add Product Modal (Updated styling for a modern look)
+// Edit Product Modal
+function EditProductModal({ open, onClose, product, mutate }) {
+  const [form, setForm] = useState(product || initialForm);
+  const [loading, setLoading] = useState(false);
+
+  if (!open || !product) return null;
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const productData = {
+        ...form,
+        price: Number(form.price),
+        cost_price: Number(form.cost_price),
+      };
+      await api.put(`/api/products/${product._id}`, productData);
+      toast.success("Product updated successfully! 🎉");
+      mutate();
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update product");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4 transition-opacity duration-300"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-xl w-full max-w-4xl max-h-[95vh] overflow-y-auto shadow-2xl transform transition-transform duration-300 scale-100"
+      >
+        <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-6 border-b border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800">Edit Product</h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-100 transition"
+          >
+            <FaTimes className="text-gray-500 hover:text-red-600 text-xl" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Product Details Section */}
+          <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4">
+            Product Details
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormInput
+              name="product_name"
+              required
+              placeholder="Product Name"
+              value={form.product_name}
+              onChange={handleChange}
+            />
+            <FormInput
+              name="price"
+              required
+              type="number"
+              placeholder="Sale Price (₦)"
+              value={form.price}
+              onChange={handleChange}
+            />
+            <select
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
+              style={{ "--tw-ring-color": theme.colorAccent }}
+            >
+              <option value="">Select Category</option>
+              <option value="Brakes">Brakes</option>
+              <option value="Engine">Engine</option>
+              <option value="Electronics">Electronics</option>
+            </select>
+            <FormInput
+              name="sub_category"
+              placeholder="Sub Category (e.g., Pads, Oil Filters)"
+              value={form.sub_category}
+              onChange={handleChange}
+            />
+          </div>
+
+          <FormInput
+            name="image_url"
+            required
+            placeholder="Image URL (e.g., https://example.com/image.jpg)"
+            value={form.image_url}
+            onChange={handleChange}
+          />
+
+          <textarea
+            name="description"
+            required
+            value={form.description}
+            onChange={handleChange}
+            placeholder="Detailed Product Description"
+            rows="5"
+            className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out resize-none"
+            style={{ "--tw-ring-color": theme.colorAccent }}
+          ></textarea>
+
+          {/* Vendor Section */}
+          <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4 pt-4">
+            Vendor & Cost Information
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormInput
+              name="vendor_name"
+              placeholder="Vendor Name"
+              value={form.vendor_name}
+              onChange={handleChange}
+            />
+            <FormInput
+              name="cost_price"
+              type="number"
+              placeholder="Cost Price (₦)"
+              value={form.cost_price}
+              onChange={handleChange}
+            />
+            <FormInput
+              name="vendor_phone"
+              placeholder="Vendor Phone (080...)"
+              value={form.vendor_phone}
+              onChange={handleChange}
+            />
+            <FormInput
+              name="vendor_whatsapp"
+              placeholder="Vendor WhatsApp"
+              value={form.vendor_whatsapp}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-700 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            style={{ backgroundColor: theme.colorButton }}
+          >
+            {loading ? "Updating Product..." : "Update Product"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Add Product Modal
 function AddProductModal({ open, onClose, mutate }) {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
@@ -76,13 +233,12 @@ function AddProductModal({ open, onClose, mutate }) {
     setLoading(true);
 
     try {
-      // NOTE: Make sure the price and cost_price are numbers if your API expects them to be
       const productData = {
         ...form,
         price: Number(form.price),
         cost_price: Number(form.cost_price),
       };
-      await axios.post("http://localhost:5000/api/products", productData);
+      await api.post("/api/products", productData);
       toast.success("Product created successfully! 🎉");
       mutate();
       setForm(initialForm);
@@ -221,15 +377,66 @@ function AddProductModal({ open, onClose, mutate }) {
   );
 }
 
-// MAIN PAGE (Enhanced with modern layout and mobile-responsive table)
-export default function AdminProductsPage() {
-  const [open, setOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+// Delete Confirmation Modal
+function DeleteConfirmModal({
+  open,
+  onClose,
+  onConfirm,
+  productName,
+  loading,
+}) {
+  if (!open) return null;
 
-  const { data, mutate, isLoading, error } = useSWR(
-    "http://localhost:5000/api/products",
-    fetcher
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-xl w-full max-w-md p-6 shadow-2xl"
+      >
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          Confirm Deletion
+        </h2>
+        <p className="text-gray-600 mb-6">
+          Are you sure you want to delete <strong>{productName}</strong>? This
+          action cannot be undone.
+        </p>
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="px-5 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+          >
+            {loading ? "Deleting..." : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
+}
+
+// MAIN PAGE
+export default function AdminProductsPage() {
+  const [openAdd, setOpenAdd] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const { data, mutate, isLoading, error } = useSWR("/api/products", fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+  });
 
   let products = data?.products || [];
 
@@ -239,9 +446,40 @@ export default function AdminProductsPage() {
       (p) =>
         p.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.sub_category.toLowerCase().includes(searchTerm.toLowerCase())
+        (p.sub_category &&
+          p.sub_category.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }
+
+  // Handle Edit
+  const handleEdit = (product) => {
+    setSelectedProduct(product);
+    setOpenEdit(true);
+  };
+
+  // Handle Delete Confirmation
+  const handleDeleteClick = (product) => {
+    setSelectedProduct(product);
+    setOpenDelete(true);
+  };
+
+  // Handle Delete
+  const handleDelete = async () => {
+    if (!selectedProduct) return;
+
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/api/products/${selectedProduct._id}`);
+      toast.success("Product deleted successfully! 🗑️");
+      mutate();
+      setOpenDelete(false);
+      setSelectedProduct(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete product");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   // Define table headers
   const tableHeaders = ["Image", "Name", "Category", "Price", "Actions"];
@@ -278,10 +516,16 @@ export default function AdminProductsPage() {
 
       {/* Actions */}
       <div className="flex justify-end space-x-3 border-t pt-3 mt-3">
-        <button className="text-blue-600 hover:text-blue-800 p-2 rounded-full bg-blue-50">
+        <button
+          onClick={() => handleEdit(p)}
+          className="text-blue-600 hover:text-blue-800 p-2 rounded-full bg-blue-50"
+        >
           <FaEdit />
         </button>
-        <button className="text-red-600 hover:text-red-800 p-2 rounded-full bg-red-50">
+        <button
+          onClick={() => handleDeleteClick(p)}
+          className="text-red-600 hover:text-red-800 p-2 rounded-full bg-red-50"
+        >
           <FaTrash />
         </button>
       </div>
@@ -301,7 +545,7 @@ export default function AdminProductsPage() {
           </h1>
 
           <button
-            onClick={() => setOpen(true)}
+            onClick={() => setOpenAdd(true)}
             className="flex items-center space-x-2 bg-blue-700 text-white px-5 py-3 rounded-xl font-semibold hover:bg-blue-800 transition duration-200 shadow-lg shadow-blue-200"
             style={{ backgroundColor: theme.colorButton }}
           >
@@ -406,10 +650,16 @@ export default function AdminProductsPage() {
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap space-x-3">
-                    <button className="text-blue-600 hover:text-white hover:bg-blue-600 p-2 rounded-full transition duration-150">
+                    <button
+                      onClick={() => handleEdit(p)}
+                      className="text-blue-600 hover:text-white hover:bg-blue-600 p-2 rounded-full transition duration-150"
+                    >
                       <FaEdit />
                     </button>
-                    <button className="text-red-600 hover:text-white hover:bg-red-600 p-2 rounded-full transition duration-150">
+                    <button
+                      onClick={() => handleDeleteClick(p)}
+                      className="text-red-600 hover:text-white hover:bg-red-600 p-2 rounded-full transition duration-150"
+                    >
                       <FaTrash />
                     </button>
                   </td>
@@ -430,10 +680,32 @@ export default function AdminProductsPage() {
           </table>
         </div>
 
+        {/* Modals */}
         <AddProductModal
-          open={open}
-          onClose={() => setOpen(false)}
+          open={openAdd}
+          onClose={() => setOpenAdd(false)}
           mutate={mutate}
+        />
+
+        <EditProductModal
+          open={openEdit}
+          onClose={() => {
+            setOpenEdit(false);
+            setSelectedProduct(null);
+          }}
+          product={selectedProduct}
+          mutate={mutate}
+        />
+
+        <DeleteConfirmModal
+          open={openDelete}
+          onClose={() => {
+            setOpenDelete(false);
+            setSelectedProduct(null);
+          }}
+          onConfirm={handleDelete}
+          productName={selectedProduct?.product_name}
+          loading={deleteLoading}
         />
       </div>
     </AdminDashboard>
