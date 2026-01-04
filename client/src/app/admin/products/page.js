@@ -497,8 +497,8 @@ function AddProductModal({ open, onClose, mutate }) {
               required
               className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
             >
-              <option value="DRAFT">Draft</option>
-              <option value="PUBLISHED">Published</option>
+              <option value="Draft">Draft</option>
+              <option value="Published">Published</option>
             </select>
           </div>
 
@@ -666,7 +666,7 @@ function ViewProductModal({ open, onClose, product }) {
               <p className="text-gray-500">Status</p>
               <span
                 className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                  product.status === "PUBLISHED"
+                  product.status === "Published"
                     ? "bg-green-100 text-green-800"
                     : "bg-yellow-100 text-yellow-800"
                 }`}
@@ -763,7 +763,7 @@ export default function AdminProductsPage() {
 
   // Handle Publish/Draft Toggle
   const handleStatusToggle = async (product) => {
-    const newStatus = product.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+    const newStatus = product.status === "Published" ? "Draft" : "Published";
 
     try {
       await api.patch(`/api/products/${product._id}/status`, {
@@ -819,7 +819,7 @@ export default function AdminProductsPage() {
           </div>
           <span
             className={`inline-block px-2 py-1 rounded-full text-xs font-semibold mt-1 ${
-              p.status === "PUBLISHED"
+              p.status === "Published"
                 ? "bg-green-100 text-green-800"
                 : "bg-yellow-100 text-yellow-800"
             }`}
@@ -847,13 +847,13 @@ export default function AdminProductsPage() {
         <button
           onClick={() => handleStatusToggle(p)}
           className={`p-2 rounded-full ${
-            p.status === "PUBLISHED"
+            p.status === "Published"
               ? "text-yellow-600 hover:text-yellow-800 bg-yellow-50"
               : "text-green-600 hover:text-green-800 bg-green-50"
           }`}
-          title={p.status === "PUBLISHED" ? "Draft" : "Publish"}
+          title={p.status === "Published" ? "Draft" : "Published"}
         >
-          {p.status === "PUBLISHED" ? <FaTimesCircle /> : <FaCheckCircle />}
+          {p.status === "Published" ? <FaTimesCircle /> : <FaCheckCircle />}
         </button>
         <button
           onClick={() => handleDeleteClick(p)}
@@ -1034,13 +1034,13 @@ export default function AdminProductsPage() {
                     <button
                       onClick={() => handleStatusToggle(p)}
                       className={`p-2 rounded-full transition duration-150 ${
-                        p.status === "PUBLISHED"
+                        p.status === "Published"
                           ? "text-yellow-600 hover:text-white hover:bg-yellow-600"
                           : "text-green-600 hover:text-white hover:bg-green-600"
                       }`}
-                      title={p.status === "PUBLISHED" ? "Draft" : "Publish"}
+                      title={p.status === "Published" ? "Draft" : "Published"}
                     >
-                      {p.status === "PUBLISHED" ? (
+                      {p.status === "Published" ? (
                         <FaTimesCircle />
                       ) : (
                         <FaCheckCircle />
