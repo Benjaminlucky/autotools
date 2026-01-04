@@ -75,10 +75,10 @@ const productSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["draft", "published"],
+        values: ["Draft", "Published"],
         message: "{VALUE} is not a valid status",
       },
-      default: "draft",
+      default: "Draft",
     },
 
     // Vendor Information (Admin Only)
