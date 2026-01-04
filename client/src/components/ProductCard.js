@@ -80,15 +80,11 @@ export default function ProductCard({ product }) {
         </div>
 
         {/* Tags */}
+        {/* Tags */}
         <div className="flex gap-2 mt-2 flex-wrap">
           {product.sub_category && (
             <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full border border-gray-300">
               {product.sub_category}
-            </span>
-          )}
-          {product.vendor_name && (
-            <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200">
-              {product.vendor_name}
             </span>
           )}
         </div>
