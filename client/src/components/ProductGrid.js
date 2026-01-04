@@ -20,7 +20,7 @@ const ProductGrid = () => {
 
   // Extract products from response and filter only PUBLISHED
   const allProducts = (data?.products || []).filter(
-    (product) => product.status === "PUBLISHED"
+    (product) => product.status === "Published"
   );
 
   // Extract unique categories from products dynamically
