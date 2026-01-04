@@ -128,7 +128,7 @@ export const updateProductStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    if (!["DRAFT", "PUBLISHED"].includes(status)) {
+    if (!["Draft", "Published"].includes(status)) {
       return res.status(400).json({
         success: false,
         message: "Invalid status",
