@@ -1,8 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaTimes } from "react-icons/fa";
+import {
+  FaPlus,
+  FaSearch,
+  FaEdit,
+  FaTrash,
+  FaTimes,
+  FaEye,
+  FaCheckCircle,
+  FaTimesCircle,
+} from "react-icons/fa";
 import AdminDashboard from "../dashboard/page";
 import { toast } from "react-toastify";
 import api from "@/lib/api.js";
@@ -14,8 +23,8 @@ const formatCurrency = (amount) => {
 };
 
 const theme = {
-  colorPrimary: "#1e3a8a", // Blue-900
-  colorAccent: "#f59e0b", // Amber-500
+  colorPrimary: "#1e3a8a",
+  colorAccent: "#f59e0b",
   colorButton: "#1e3a8a",
 };
 
@@ -30,6 +39,11 @@ const initialForm = {
   sub_category: "",
   image_url: "",
   description: "",
+  condition: "NEW",
+  vehicle_make: "",
+  vehicle_model: "",
+  is_featured: false,
+  status: "DRAFT",
   vendor_name: "",
   vendor_phone: "",
   vendor_whatsapp: "",
@@ -44,31 +58,63 @@ const FormInput = ({
   placeholder,
   type = "text",
   required = false,
-}) => (
-  <input
-    name={name}
-    type={type}
-    value={value}
-    onChange={onChange}
-    placeholder={placeholder}
-    required={required}
-    className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
-    style={{
-      "--tw-ring-color": theme.colorAccent,
-      borderColor: value && required && !value.trim() ? "red" : "",
-    }}
-  />
-);
+}) => {
+  const isEmptyRequired =
+    required && typeof value === "string" && value.trim().length === 0;
+
+  return (
+    <input
+      name={name}
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      required={required}
+      className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
+      style={{
+        "--tw-ring-color": theme.colorAccent,
+        borderColor: isEmptyRequired ? "red" : "",
+      }}
+    />
+  );
+};
 
 // Edit Product Modal
 function EditProductModal({ open, onClose, product, mutate }) {
-  const [form, setForm] = useState(product || initialForm);
+  const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (product && open) {
+      setForm({
+        product_name: product.product_name || "",
+        price: product.price || "",
+        category: product.category || "",
+        sub_category: product.sub_category || "",
+        image_url: product.image_url || "",
+        description: product.description || "",
+        condition: product.condition || "NEW",
+        vehicle_make: product.vehicle_make || "",
+        vehicle_model: product.vehicle_model || "",
+        is_featured: product.is_featured || false,
+        status: product.status || "DRAFT",
+        vendor_name: product.vendor_name || "",
+        vendor_phone: product.vendor_phone || "",
+        vendor_whatsapp: product.vendor_whatsapp || "",
+        cost_price: product.cost_price || "",
+      });
+    }
+  }, [product, open]);
 
   if (!open || !product) return null;
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm({
+      ...form,
+      [name]: type === "checkbox" ? checked : value,
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,7 +124,7 @@ function EditProductModal({ open, onClose, product, mutate }) {
       const productData = {
         ...form,
         price: Number(form.price),
-        cost_price: Number(form.cost_price),
+        cost_price: form.cost_price ? Number(form.cost_price) : undefined,
       };
       await api.put(`/api/products/${product._id}`, productData);
       toast.success("Product updated successfully! 🎉");
@@ -137,12 +183,14 @@ function EditProductModal({ open, onClose, product, mutate }) {
               onChange={handleChange}
               required
               className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
-              style={{ "--tw-ring-color": theme.colorAccent }}
             >
               <option value="">Select Category</option>
               <option value="Brakes">Brakes</option>
               <option value="Engine">Engine</option>
-              <option value="Electronics">Electronics</option>
+              <option value="Suspension">Suspension</option>
+              <option value="Electrical">Electrical</option>
+              <option value="Body">Body</option>
+              <option value="Other">Other</option>
             </select>
             <FormInput
               name="sub_category"
@@ -150,6 +198,37 @@ function EditProductModal({ open, onClose, product, mutate }) {
               value={form.sub_category}
               onChange={handleChange}
             />
+          </div>
+
+          {/* Vehicle Information */}
+          <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4 pt-4">
+            Vehicle Information
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormInput
+              name="vehicle_make"
+              required
+              placeholder="Vehicle Make (e.g., Toyota)"
+              value={form.vehicle_make}
+              onChange={handleChange}
+            />
+            <FormInput
+              name="vehicle_model"
+              required
+              placeholder="Vehicle Model (e.g., Camry)"
+              value={form.vehicle_model}
+              onChange={handleChange}
+            />
+            <select
+              name="condition"
+              value={form.condition}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
+            >
+              <option value="NEW">NEW</option>
+              <option value="USED">USED</option>
+            </select>
           </div>
 
           <FormInput
@@ -168,8 +247,36 @@ function EditProductModal({ open, onClose, product, mutate }) {
             placeholder="Detailed Product Description"
             rows="5"
             className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out resize-none"
-            style={{ "--tw-ring-color": theme.colorAccent }}
           ></textarea>
+
+          {/* Product Settings */}
+          <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4 pt-4">
+            Product Settings
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                name="is_featured"
+                checked={form.is_featured}
+                onChange={handleChange}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <label className="text-gray-700 font-medium">
+                Featured Product
+              </label>
+            </div>
+            <select
+              name="status"
+              value={form.status}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
+            >
+              <option value="DRAFT">Draft</option>
+              <option value="PUBLISHED">Published</option>
+            </select>
+          </div>
 
           {/* Vendor Section */}
           <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4 pt-4">
@@ -208,7 +315,6 @@ function EditProductModal({ open, onClose, product, mutate }) {
             type="submit"
             disabled={loading}
             className="w-full bg-blue-700 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-            style={{ backgroundColor: theme.colorButton }}
           >
             {loading ? "Updating Product..." : "Update Product"}
           </button>
@@ -225,8 +331,13 @@ function AddProductModal({ open, onClose, mutate }) {
 
   if (!open) return null;
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm({
+      ...form,
+      [name]: type === "checkbox" ? checked : value,
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -236,7 +347,7 @@ function AddProductModal({ open, onClose, mutate }) {
       const productData = {
         ...form,
         price: Number(form.price),
-        cost_price: Number(form.cost_price),
+        cost_price: form.cost_price ? Number(form.cost_price) : undefined,
       };
       await api.post("/api/products", productData);
       toast.success("Product created successfully! 🎉");
@@ -296,12 +407,14 @@ function AddProductModal({ open, onClose, mutate }) {
               onChange={handleChange}
               required
               className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
-              style={{ "--tw-ring-color": theme.colorAccent }}
             >
               <option value="">Select Category</option>
               <option value="Brakes">Brakes</option>
               <option value="Engine">Engine</option>
-              <option value="Electronics">Electronics</option>
+              <option value="Suspension">Suspension</option>
+              <option value="Electrical">Electrical</option>
+              <option value="Body">Body</option>
+              <option value="Other">Other</option>
             </select>
             <FormInput
               name="sub_category"
@@ -309,6 +422,37 @@ function AddProductModal({ open, onClose, mutate }) {
               value={form.sub_category}
               onChange={handleChange}
             />
+          </div>
+
+          {/* Vehicle Information */}
+          <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4 pt-4">
+            Vehicle Information
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormInput
+              name="vehicle_make"
+              required
+              placeholder="Vehicle Make (e.g., Toyota)"
+              value={form.vehicle_make}
+              onChange={handleChange}
+            />
+            <FormInput
+              name="vehicle_model"
+              required
+              placeholder="Vehicle Model (e.g., Camry)"
+              value={form.vehicle_model}
+              onChange={handleChange}
+            />
+            <select
+              name="condition"
+              value={form.condition}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
+            >
+              <option value="NEW">NEW</option>
+              <option value="USED">USED</option>
+            </select>
           </div>
 
           <FormInput
@@ -327,8 +471,36 @@ function AddProductModal({ open, onClose, mutate }) {
             placeholder="Detailed Product Description"
             rows="5"
             className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out resize-none"
-            style={{ "--tw-ring-color": theme.colorAccent }}
           ></textarea>
+
+          {/* Product Settings */}
+          <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4 pt-4">
+            Product Settings
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                name="is_featured"
+                checked={form.is_featured}
+                onChange={handleChange}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <label className="text-gray-700 font-medium">
+                Featured Product
+              </label>
+            </div>
+            <select
+              name="status"
+              value={form.status}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
+            >
+              <option value="DRAFT">Draft</option>
+              <option value="PUBLISHED">Published</option>
+            </select>
+          </div>
 
           {/* Vendor Section */}
           <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4 pt-4">
@@ -367,7 +539,6 @@ function AddProductModal({ open, onClose, mutate }) {
             type="submit"
             disabled={loading}
             className="w-full bg-blue-700 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-            style={{ backgroundColor: theme.colorButton }}
           >
             {loading ? "Creating Product..." : "Create Product"}
           </button>
@@ -424,11 +595,112 @@ function DeleteConfirmModal({
   );
 }
 
+// View Product Modal
+function ViewProductModal({ open, onClose, product }) {
+  if (!open || !product) return null;
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl"
+      >
+        <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-6 border-b">
+          <h2 className="text-2xl font-bold text-gray-800">Product Details</h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-100 transition"
+          >
+            <FaTimes className="text-gray-500 hover:text-red-600 text-xl" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <div className="mb-6">
+            <img
+              src={product.image_url}
+              alt={product.product_name}
+              className="w-full h-64 object-cover rounded-lg"
+              onError={(e) => {
+                e.target.src =
+                  "https://via.placeholder.com/400x300?text=No+Image";
+              }}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-500">Product Name</p>
+              <p className="font-semibold">{product.product_name}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Price</p>
+              <p className="font-semibold text-green-600">
+                {formatCurrency(product.price)}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500">Category</p>
+              <p className="font-semibold">{product.category}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Sub Category</p>
+              <p className="font-semibold">{product.sub_category || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Vehicle Make</p>
+              <p className="font-semibold">{product.vehicle_make}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Vehicle Model</p>
+              <p className="font-semibold">{product.vehicle_model}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Condition</p>
+              <p className="font-semibold">{product.condition}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Status</p>
+              <span
+                className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                  product.status === "PUBLISHED"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-yellow-100 text-yellow-800"
+                }`}
+              >
+                {product.status}
+              </span>
+            </div>
+            <div>
+              <p className="text-gray-500">Featured</p>
+              <p className="font-semibold">
+                {product.is_featured ? "Yes" : "No"}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500">Vendor</p>
+              <p className="font-semibold">{product.vendor_name || "N/A"}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-gray-500 mb-2">Description</p>
+              <p className="text-gray-700">{product.description}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // MAIN PAGE
 export default function AdminProductsPage() {
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
+  const [openView, setOpenView] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -447,7 +719,9 @@ export default function AdminProductsPage() {
         p.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.sub_category &&
-          p.sub_category.toLowerCase().includes(searchTerm.toLowerCase()))
+          p.sub_category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        p.vehicle_make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.vehicle_model.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }
 
@@ -455,6 +729,12 @@ export default function AdminProductsPage() {
   const handleEdit = (product) => {
     setSelectedProduct(product);
     setOpenEdit(true);
+  };
+
+  // Handle View
+  const handleView = (product) => {
+    setSelectedProduct(product);
+    setOpenView(true);
   };
 
   // Handle Delete Confirmation
@@ -481,14 +761,37 @@ export default function AdminProductsPage() {
     }
   };
 
+  // Handle Publish/Draft Toggle
+  const handleStatusToggle = async (product) => {
+    const newStatus = product.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+
+    try {
+      await api.patch(`/api/products/${product._id}/status`, {
+        status: newStatus,
+      });
+      toast.success(`Product ${newStatus.toLowerCase()} successfully! ✅`);
+      mutate();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update status");
+    }
+  };
+
   // Define table headers
-  const tableHeaders = ["Image", "Name", "Category", "Price", "Actions"];
+  const tableHeaders = [
+    "Image",
+    "Name",
+    "Vehicle",
+    "Category",
+    "Condition",
+    "Price",
+    "Status",
+    "Actions",
+  ];
 
   // Helper for Product Card View (Mobile)
   const ProductCard = ({ p }) => (
     <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm mb-4 last:mb-0 transition duration-150 hover:shadow-md">
       <div className="flex justify-between items-start mb-3">
-        {/* Product Image and Name */}
         <div className="flex items-center space-x-3">
           <img
             src={p.image_url}
@@ -503,28 +806,59 @@ export default function AdminProductsPage() {
               {p.product_name}
             </div>
             <div className="text-sm text-gray-500">
-              {p.category} {p.sub_category && ` / ${p.sub_category}`}
+              {p.vehicle_make} {p.vehicle_model}
+            </div>
+            <div className="text-xs text-gray-400">
+              {p.category} • {p.condition}
             </div>
           </div>
         </div>
-
-        {/* Price */}
-        <div className="text-xl font-extrabold text-green-600">
-          {formatCurrency(p.price)}
+        <div className="text-right">
+          <div className="text-xl font-extrabold text-green-600">
+            {formatCurrency(p.price)}
+          </div>
+          <span
+            className={`inline-block px-2 py-1 rounded-full text-xs font-semibold mt-1 ${
+              p.status === "PUBLISHED"
+                ? "bg-green-100 text-green-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {p.status}
+          </span>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex justify-end space-x-3 border-t pt-3 mt-3">
+      <div className="flex justify-end space-x-2 border-t pt-3 mt-3">
+        <button
+          onClick={() => handleView(p)}
+          className="text-gray-600 hover:text-gray-800 p-2 rounded-full bg-gray-50"
+          title="View"
+        >
+          <FaEye />
+        </button>
         <button
           onClick={() => handleEdit(p)}
           className="text-blue-600 hover:text-blue-800 p-2 rounded-full bg-blue-50"
+          title="Edit"
         >
           <FaEdit />
         </button>
         <button
+          onClick={() => handleStatusToggle(p)}
+          className={`p-2 rounded-full ${
+            p.status === "PUBLISHED"
+              ? "text-yellow-600 hover:text-yellow-800 bg-yellow-50"
+              : "text-green-600 hover:text-green-800 bg-green-50"
+          }`}
+          title={p.status === "PUBLISHED" ? "Draft" : "Publish"}
+        >
+          {p.status === "PUBLISHED" ? <FaTimesCircle /> : <FaCheckCircle />}
+        </button>
+        <button
           onClick={() => handleDeleteClick(p)}
           className="text-red-600 hover:text-red-800 p-2 rounded-full bg-red-50"
+          title="Delete"
         >
           <FaTrash />
         </button>
@@ -535,7 +869,6 @@ export default function AdminProductsPage() {
   return (
     <AdminDashboard>
       <div className="container mx-auto p-4 md:p-6">
-        {/* Header & Add Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-4">
           <h1
             className="text-4xl font-extrabold mb-3 sm:mb-0 text-gray-800"
@@ -553,11 +886,10 @@ export default function AdminProductsPage() {
           </button>
         </div>
 
-        {/* Search Bar */}
         <div className="relative mb-8">
           <input
             type="text"
-            placeholder="Search by product name, category, or sub-category..."
+            placeholder="Search by product name, category, vehicle make or model..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl bg-white shadow-inner focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"
@@ -565,7 +897,6 @@ export default function AdminProductsPage() {
           <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
         </div>
 
-        {/* Loading and Error States */}
         {isLoading && (
           <div className="text-center py-10 text-gray-500 font-medium">
             Loading products... ⚙️
@@ -578,7 +909,6 @@ export default function AdminProductsPage() {
           </div>
         )}
 
-        {/* --- Mobile View: Product Cards (Default) --- */}
         <div className="block lg:hidden">
           <h2 className="text-2xl font-bold mb-4 text-gray-700">
             Products ({products.length})
@@ -592,7 +922,6 @@ export default function AdminProductsPage() {
           )}
         </div>
 
-        {/* --- Desktop View: Products Table (lg: block) --- */}
         <div className="hidden lg:block bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 border-b-2 border-gray-200">
@@ -632,6 +961,20 @@ export default function AdminProductsPage() {
                     <div className="text-base font-semibold text-gray-900">
                       {p.product_name}
                     </div>
+                    {p.is_featured && (
+                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+                        Featured
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {p.vehicle_make}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {p.vehicle_model}
+                    </div>
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -645,20 +988,68 @@ export default function AdminProductsPage() {
                     )}
                   </td>
 
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        p.condition === "NEW"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {p.condition}
+                    </span>
+                  </td>
+
                   <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-green-700">
                     {formatCurrency(p.price)}
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap space-x-3">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        p.status === "PUBLISHED"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {p.status}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                    <button
+                      onClick={() => handleView(p)}
+                      className="text-gray-600 hover:text-white hover:bg-gray-600 p-2 rounded-full transition duration-150"
+                      title="View"
+                    >
+                      <FaEye />
+                    </button>
                     <button
                       onClick={() => handleEdit(p)}
                       className="text-blue-600 hover:text-white hover:bg-blue-600 p-2 rounded-full transition duration-150"
+                      title="Edit"
                     >
                       <FaEdit />
                     </button>
                     <button
+                      onClick={() => handleStatusToggle(p)}
+                      className={`p-2 rounded-full transition duration-150 ${
+                        p.status === "PUBLISHED"
+                          ? "text-yellow-600 hover:text-white hover:bg-yellow-600"
+                          : "text-green-600 hover:text-white hover:bg-green-600"
+                      }`}
+                      title={p.status === "PUBLISHED" ? "Draft" : "Publish"}
+                    >
+                      {p.status === "PUBLISHED" ? (
+                        <FaTimesCircle />
+                      ) : (
+                        <FaCheckCircle />
+                      )}
+                    </button>
+                    <button
                       onClick={() => handleDeleteClick(p)}
                       className="text-red-600 hover:text-white hover:bg-red-600 p-2 rounded-full transition duration-150"
+                      title="Delete"
                     >
                       <FaTrash />
                     </button>
@@ -680,7 +1071,6 @@ export default function AdminProductsPage() {
           </table>
         </div>
 
-        {/* Modals */}
         <AddProductModal
           open={openAdd}
           onClose={() => setOpenAdd(false)}
@@ -695,6 +1085,15 @@ export default function AdminProductsPage() {
           }}
           product={selectedProduct}
           mutate={mutate}
+        />
+
+        <ViewProductModal
+          open={openView}
+          onClose={() => {
+            setOpenView(false);
+            setSelectedProduct(null);
+          }}
+          product={selectedProduct}
         />
 
         <DeleteConfirmModal

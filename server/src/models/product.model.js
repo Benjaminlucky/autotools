@@ -24,6 +24,7 @@ const productSchema = new mongoose.Schema(
           "Engine",
           "Suspension",
           "Electrical",
+          "Electronics",
           "Body",
           "Other",
         ],
@@ -46,6 +47,40 @@ const productSchema = new mongoose.Schema(
       trim: true,
       maxlength: [2000, "Description cannot exceed 2000 characters"],
     },
+
+    // NEW FIELDS
+    condition: {
+      type: String,
+      required: [true, "Condition is required"],
+      enum: {
+        values: ["NEW", "USED"],
+        message: "{VALUE} is not a valid condition",
+      },
+      default: "NEW",
+    },
+    vehicle_make: {
+      type: String,
+      trim: true,
+      maxlength: [100, "Vehicle make cannot exceed 100 characters"],
+    },
+    vehicle_model: {
+      type: String,
+      trim: true,
+      maxlength: [100, "Vehicle model cannot exceed 100 characters"],
+    },
+    is_featured: {
+      type: Boolean,
+      default: false,
+    },
+    status: {
+      type: String,
+      enum: {
+        values: ["draft", "published"],
+        message: "{VALUE} is not a valid status",
+      },
+      default: "draft",
+    },
+
     // Vendor Information (Admin Only)
     vendor_name: {
       type: String,
@@ -66,6 +101,7 @@ const productSchema = new mongoose.Schema(
       type: Number,
       min: [0, "Cost price cannot be negative"],
     },
+
     // Additional useful fields
     stock_quantity: {
       type: Number,
@@ -79,12 +115,12 @@ const productSchema = new mongoose.Schema(
     sku: {
       type: String,
       unique: true,
-      sparse: true, // Allows null values while maintaining uniqueness
+      sparse: true,
       trim: true,
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt fields
+    timestamps: true,
   }
 );
 
@@ -92,6 +128,8 @@ const productSchema = new mongoose.Schema(
 productSchema.index({ product_name: "text", description: "text" });
 productSchema.index({ category: 1, sub_category: 1 });
 productSchema.index({ price: 1 });
+productSchema.index({ is_featured: 1, status: 1 });
+productSchema.index({ vehicle_make: 1, vehicle_model: 1 });
 
 // Virtual field for profit margin
 productSchema.virtual("profit_margin").get(function () {

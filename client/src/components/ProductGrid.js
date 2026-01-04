@@ -10,27 +10,39 @@ const fetcher = (url) => api.get(url).then((res) => res.data);
 
 const ProductGrid = () => {
   const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCondition, setActiveCondition] = useState("All");
 
-  // Fetch products from backend
+  // Fetch products from backend (only published products for public view)
   const { data, error, isLoading } = useSWR("/api/products", fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: true,
   });
 
-  // Extract products from response
-  const products = data?.products || [];
+  // Extract products from response and filter only PUBLISHED
+  const allProducts = (data?.products || []).filter(
+    (product) => product.status === "PUBLISHED"
+  );
 
   // Extract unique categories from products dynamically
   const dynamicCategories = [
     "All",
-    ...new Set(products.map((product) => product.category).filter(Boolean)),
+    ...new Set(allProducts.map((product) => product.category).filter(Boolean)),
   ];
 
-  // Filter products based on active category
-  const filteredProducts =
-    activeCategory === "All"
-      ? products
-      : products.filter((product) => product.category === activeCategory);
+  // Filter products based on active category and condition
+  let filteredProducts = allProducts;
+
+  if (activeCategory !== "All") {
+    filteredProducts = filteredProducts.filter(
+      (product) => product.category === activeCategory
+    );
+  }
+
+  if (activeCondition !== "All") {
+    filteredProducts = filteredProducts.filter(
+      (product) => product.condition === activeCondition
+    );
+  }
 
   // Loading State
   if (isLoading) {
@@ -79,7 +91,7 @@ const ProductGrid = () => {
   }
 
   // Empty State
-  if (products.length === 0) {
+  if (allProducts.length === 0) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
         <svg
@@ -126,7 +138,35 @@ const ProductGrid = () => {
               {category}
               {category !== "All" && (
                 <span className="ml-2 text-xs opacity-75">
-                  ({products.filter((p) => p.category === category).length})
+                  ({allProducts.filter((p) => p.category === category).length})
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Condition Filter */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+          Filter by Condition
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          {["All", "NEW", "USED"].map((condition) => (
+            <button
+              key={condition}
+              onClick={() => setActiveCondition(condition)}
+              className={`px-5 py-2.5 rounded-full text-sm font-medium border-2 transition-all duration-200 ${
+                activeCondition === condition
+                  ? "bg-green-600 text-white border-green-600 shadow-lg shadow-green-200"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-green-400 hover:bg-green-50"
+              }`}
+            >
+              {condition}
+              {condition !== "All" && (
+                <span className="ml-2 text-xs opacity-75">
+                  ({allProducts.filter((p) => p.condition === condition).length}
+                  )
                 </span>
               )}
             </button>
@@ -140,10 +180,21 @@ const ProductGrid = () => {
           Showing{" "}
           <span className="font-semibold">{filteredProducts.length}</span>{" "}
           {filteredProducts.length === 1 ? "product" : "products"}
-          {activeCategory !== "All" && (
+          {(activeCategory !== "All" || activeCondition !== "All") && (
             <span>
               {" "}
-              in <span className="font-semibold">{activeCategory}</span>
+              {activeCategory !== "All" && (
+                <>
+                  in <span className="font-semibold">{activeCategory}</span>
+                </>
+              )}
+              {activeCondition !== "All" && (
+                <>
+                  {activeCategory !== "All" && " • "}
+                  <span className="font-semibold">{activeCondition}</span>{" "}
+                  condition
+                </>
+              )}
             </span>
           )}
         </p>
@@ -175,14 +226,16 @@ const ProductGrid = () => {
             No Products Found
           </h3>
           <p className="text-gray-500 mb-4">
-            No products match the selected category:{" "}
-            <strong>{activeCategory}</strong>
+            No products match the selected filters.
           </p>
           <button
-            onClick={() => setActiveCategory("All")}
+            onClick={() => {
+              setActiveCategory("All");
+              setActiveCondition("All");
+            }}
             className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
-            View All Products
+            Clear Filters
           </button>
         </div>
       )}
