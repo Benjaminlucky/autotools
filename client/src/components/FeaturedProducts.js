@@ -1,46 +1,53 @@
-// components/FeaturedProducts.js
-import ProductCard from "./ProductCard";
+"use client";
 
-const sampleProducts = [
-  {
-    id: 1,
-    name: "Brake Pad Set",
-    category: "Brakes",
-    description: "High quality ceramic brake pads for Toyota Camry 2015-2020",
-    price: 15000,
-    image: "/images/brake.jpg",
-  },
-  {
-    id: 2,
-    name: "Oil Filter Premium",
-    category: "Engine",
-    description: "Premium oil filter for Honda Accord, CR-V, and Civic",
-    price: 5000,
-    image: "/images/oilfilter.jpg",
-  },
-  {
-    id: 3,
-    name: "Iridium Spark Plug Set",
-    category: "Engine",
-    description: "Better fuel efficiency (Set of 4)",
-    price: 12000,
-    image: "/images/sparkplug.jpg",
-  },
-  {
-    id: 4,
-    name: "Rear Shock Absorber",
-    category: "Suspension",
-    description: "Heavy-duty shock absorber for SUVs and trucks",
-    price: 45000,
-    image: "/images/shock.jpg",
-  },
-];
+import useSWR from "swr";
+import ProductCard from "./ProductCard";
+import api from "@/lib/api.js";
+
+// SWR fetcher
+const fetcher = (url) => api.get(url).then((res) => res.data);
 
 export default function FeaturedProducts() {
+  const { data, error, isLoading } = useSWR("/api/products", fetcher, {
+    revalidateOnFocus: false,
+  });
+
+  // Extract & filter featured + published products
+  const featuredProducts = (data?.products || []).filter(
+    (product) => product.is_featured === true && product.status === "Published"
+  );
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-12 text-red-600">
+        Failed to load featured products.
+      </div>
+    );
+  }
+
+  // Empty state
+  if (featuredProducts.length === 0) {
+    return (
+      <div className="text-center py-12 text-gray-500">
+        No featured products available at the moment.
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4 md:px-10">
-      {sampleProducts.map((product) => (
-        <ProductCard key={product.id} product={product} />
+      {featuredProducts.map((product) => (
+        <ProductCard key={product._id} product={product} />
       ))}
     </div>
   );
