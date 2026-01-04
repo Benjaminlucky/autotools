@@ -92,6 +92,16 @@ export const getAllProducts = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
+    if (req.body.status) {
+      const statusMap = {
+        DRAFT: "Draft",
+        PUBLISHED: "Published",
+        Draft: "Draft",
+        Published: "Published",
+      };
+      req.body.status = statusMap[req.body.status];
+    }
+
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
       {
