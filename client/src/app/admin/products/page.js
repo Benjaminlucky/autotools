@@ -43,7 +43,7 @@ const initialForm = {
   vehicle_make: "",
   vehicle_model: "",
   is_featured: false,
-  status: "DRAFT",
+  status: "Draft",
   vendor_name: "",
   vendor_phone: "",
   vendor_whatsapp: "",
@@ -97,7 +97,7 @@ function EditProductModal({ open, onClose, product, mutate }) {
         vehicle_make: product.vehicle_make || "",
         vehicle_model: product.vehicle_model || "",
         is_featured: product.is_featured || false,
-        status: product.status || "DRAFT",
+        status: product.status || "Draft",
         vendor_name: product.vendor_name || "",
         vendor_phone: product.vendor_phone || "",
         vendor_whatsapp: product.vendor_whatsapp || "",
@@ -273,8 +273,8 @@ function EditProductModal({ open, onClose, product, mutate }) {
               required
               className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
             >
-              <option value="DRAFT">Draft</option>
-              <option value="PUBLISHED">Published</option>
+              <option value="Draft">Draft</option>
+              <option value="Published">Published</option>
             </select>
           </div>
 
