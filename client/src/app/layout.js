@@ -1,13 +1,8 @@
 // app/layout.js
-
 import "./globals.css";
-// import { Geist, Geist_Mono } from "next/font/google"; // Removed/Commented out incomplete font imports
 import Navbar from "@/components/Navbar";
-
-// ⬅️ Import ToastContainer and the CSS for react-toastify
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 import { CartProvider } from "@/context/CartContext";
 
 export const metadata = {
@@ -20,10 +15,8 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <CartProvider>
-          {" "}
           <Navbar />
           {children}
-          {/* ⬅️ Add the ToastContainer here, positioned top-right for a modern look */}
           <ToastContainer
             position="top-right"
             autoClose={5000}

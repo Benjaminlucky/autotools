@@ -1,4 +1,3 @@
-// src/models/product.model.js
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema(
@@ -47,8 +46,6 @@ const productSchema = new mongoose.Schema(
       trim: true,
       maxlength: [2000, "Description cannot exceed 2000 characters"],
     },
-
-    // NEW FIELDS
     condition: {
       type: String,
       required: [true, "Condition is required"],
@@ -80,8 +77,6 @@ const productSchema = new mongoose.Schema(
       },
       default: "Draft",
     },
-
-    // Vendor Information (Admin Only)
     vendor_name: {
       type: String,
       trim: true,
@@ -101,12 +96,19 @@ const productSchema = new mongoose.Schema(
       type: Number,
       min: [0, "Cost price cannot be negative"],
     },
-
-    // Additional useful fields
     stock_quantity: {
       type: Number,
       default: 0,
       min: [0, "Stock quantity cannot be negative"],
+    },
+    low_stock_threshold: {
+      type: Number,
+      default: 5,
+      min: [0, "Low stock threshold cannot be negative"],
+    },
+    track_inventory: {
+      type: Boolean,
+      default: true,
     },
     is_active: {
       type: Boolean,
@@ -124,14 +126,27 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-// Index for faster searches
+// Indexes
 productSchema.index({ product_name: "text", description: "text" });
 productSchema.index({ category: 1, sub_category: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ is_featured: 1, status: 1 });
 productSchema.index({ vehicle_make: 1, vehicle_model: 1 });
+productSchema.index({ stock_quantity: 1 });
 
-// Virtual field for profit margin
+// Virtual: In Stock Status
+productSchema.virtual("in_stock").get(function () {
+  return this.stock_quantity > 0;
+});
+
+// Virtual: Low Stock Status
+productSchema.virtual("is_low_stock").get(function () {
+  return (
+    this.stock_quantity > 0 && this.stock_quantity <= this.low_stock_threshold
+  );
+});
+
+// Virtual: Profit Margin
 productSchema.virtual("profit_margin").get(function () {
   if (this.cost_price && this.price) {
     return this.price - this.cost_price;
@@ -139,7 +154,7 @@ productSchema.virtual("profit_margin").get(function () {
   return null;
 });
 
-// Virtual field for profit percentage
+// Virtual: Profit Percentage
 productSchema.virtual("profit_percentage").get(function () {
   if (this.cost_price && this.price && this.cost_price > 0) {
     return ((this.price - this.cost_price) / this.cost_price) * 100;
@@ -147,9 +162,16 @@ productSchema.virtual("profit_percentage").get(function () {
   return null;
 });
 
-// Ensure virtuals are included when converting to JSON
 productSchema.set("toJSON", { virtuals: true });
 productSchema.set("toObject", { virtuals: true });
+
+// Pre-save hook to auto-generate SKU
+// FIXED: Removed next() parameter and call - not needed in modern Mongoose
+productSchema.pre("save", function () {
+  if (!this.sku) {
+    this.sku = `SKU-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+});
 
 const Product = mongoose.model("Product", productSchema);
 

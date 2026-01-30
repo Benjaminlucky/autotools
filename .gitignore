@@ -18,19 +18,23 @@
 # Dependencies & Build Output
 # -------------------------------------------------------------------
 
-# Node.js dependencies
-/node_modules
+# Node.js dependencies (ignore in root and all subdirectories)
+node_modules
 
 # Next.js build output
-/.next/
-/out/
+.next/
+out/
 
 # Production history file
 .next/cache
 .next/static
 
 # Temporary files created during development
-/tmp
+tmp/
+
+# Server test/data files (optional - remove if you want to track these)
+server/product.json
+server/test_product.json
 
 # -------------------------------------------------------------------
 # IDE & System Files

@@ -11,6 +11,8 @@ import {
   FaEye,
   FaCheckCircle,
   FaTimesCircle,
+  FaExclamationTriangle,
+  FaBoxes,
 } from "react-icons/fa";
 import AdminDashboard from "../dashboard/page";
 import { toast } from "react-toastify";
@@ -31,7 +33,7 @@ const theme = {
 // SWR Fetcher using the api instance
 const fetcher = (url) => api.get(url).then((res) => res.data);
 
-// Modal Initial Form
+// Modal Initial Form - UPDATED with stock fields
 const initialForm = {
   product_name: "",
   price: "",
@@ -48,6 +50,10 @@ const initialForm = {
   vendor_phone: "",
   vendor_whatsapp: "",
   cost_price: "",
+  stock_quantity: "",
+  low_stock_threshold: "5",
+  track_inventory: true,
+  sku: "",
 };
 
 // Input Component
@@ -58,6 +64,7 @@ const FormInput = ({
   placeholder,
   type = "text",
   required = false,
+  min,
 }) => {
   const isEmptyRequired =
     required && typeof value === "string" && value.trim().length === 0;
@@ -70,6 +77,7 @@ const FormInput = ({
       onChange={onChange}
       placeholder={placeholder}
       required={required}
+      min={min}
       className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out"
       style={{
         "--tw-ring-color": theme.colorAccent,
@@ -79,7 +87,40 @@ const FormInput = ({
   );
 };
 
-// Edit Product Modal
+// Stock Badge Component
+const StockBadge = ({ stock, threshold, trackInventory }) => {
+  if (!trackInventory) {
+    return (
+      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
+        Not Tracked
+      </span>
+    );
+  }
+
+  if (stock === 0) {
+    return (
+      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 flex items-center gap-1">
+        <FaTimesCircle /> Out of Stock
+      </span>
+    );
+  }
+
+  if (stock <= threshold) {
+    return (
+      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 flex items-center gap-1">
+        <FaExclamationTriangle /> Low ({stock})
+      </span>
+    );
+  }
+
+  return (
+    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 flex items-center gap-1">
+      <FaCheckCircle /> In Stock ({stock})
+    </span>
+  );
+};
+
+// Edit Product Modal - UPDATED with stock fields
 function EditProductModal({ open, onClose, product, mutate }) {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
@@ -102,6 +143,10 @@ function EditProductModal({ open, onClose, product, mutate }) {
         vendor_phone: product.vendor_phone || "",
         vendor_whatsapp: product.vendor_whatsapp || "",
         cost_price: product.cost_price || "",
+        stock_quantity: product.stock_quantity ?? "",
+        low_stock_threshold: product.low_stock_threshold ?? "5",
+        track_inventory: product.track_inventory ?? true,
+        sku: product.sku || "",
       });
     }
   }, [product, open]);
@@ -125,6 +170,10 @@ function EditProductModal({ open, onClose, product, mutate }) {
         ...form,
         price: Number(form.price),
         cost_price: form.cost_price ? Number(form.cost_price) : undefined,
+        stock_quantity: form.stock_quantity ? Number(form.stock_quantity) : 0,
+        low_stock_threshold: form.low_stock_threshold
+          ? Number(form.low_stock_threshold)
+          : 5,
       };
       await api.put(`/api/products/${product._id}`, productData);
       toast.success("Product updated successfully! 🎉");
@@ -173,6 +222,7 @@ function EditProductModal({ open, onClose, product, mutate }) {
               name="price"
               required
               type="number"
+              min="0"
               placeholder="Sale Price (₦)"
               value={form.price}
               onChange={handleChange}
@@ -249,6 +299,47 @@ function EditProductModal({ open, onClose, product, mutate }) {
             className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out resize-none"
           ></textarea>
 
+          {/* Inventory Management Section - NEW */}
+          <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4 pt-4 flex items-center gap-2">
+            <FaBoxes /> Inventory Management
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormInput
+              name="stock_quantity"
+              type="number"
+              min="0"
+              placeholder="Stock Quantity"
+              value={form.stock_quantity}
+              onChange={handleChange}
+            />
+            <FormInput
+              name="low_stock_threshold"
+              type="number"
+              min="0"
+              placeholder="Low Stock Alert (Default: 5)"
+              value={form.low_stock_threshold}
+              onChange={handleChange}
+            />
+            <FormInput
+              name="sku"
+              placeholder="SKU (Optional - Auto-generated)"
+              value={form.sku}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              name="track_inventory"
+              checked={form.track_inventory}
+              onChange={handleChange}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <label className="text-gray-700 font-medium">
+              Track Inventory (Uncheck if stock is unlimited or not tracked)
+            </label>
+          </div>
+
           {/* Product Settings */}
           <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4 pt-4">
             Product Settings
@@ -292,6 +383,7 @@ function EditProductModal({ open, onClose, product, mutate }) {
             <FormInput
               name="cost_price"
               type="number"
+              min="0"
               placeholder="Cost Price (₦)"
               value={form.cost_price}
               onChange={handleChange}
@@ -324,7 +416,7 @@ function EditProductModal({ open, onClose, product, mutate }) {
   );
 }
 
-// Add Product Modal
+// Add Product Modal - UPDATED with stock fields
 function AddProductModal({ open, onClose, mutate }) {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
@@ -348,6 +440,10 @@ function AddProductModal({ open, onClose, mutate }) {
         ...form,
         price: Number(form.price),
         cost_price: form.cost_price ? Number(form.cost_price) : undefined,
+        stock_quantity: form.stock_quantity ? Number(form.stock_quantity) : 0,
+        low_stock_threshold: form.low_stock_threshold
+          ? Number(form.low_stock_threshold)
+          : 5,
       };
       await api.post("/api/products", productData);
       toast.success("Product created successfully! 🎉");
@@ -397,6 +493,7 @@ function AddProductModal({ open, onClose, mutate }) {
               name="price"
               required
               type="number"
+              min="0"
               placeholder="Sale Price (₦)"
               value={form.price}
               onChange={handleChange}
@@ -473,6 +570,47 @@ function AddProductModal({ open, onClose, mutate }) {
             className="w-full px-4 py-3 border rounded-lg bg-white border-gray-300 focus:border-blue-500 focus:ring-1 transition duration-150 ease-in-out resize-none"
           ></textarea>
 
+          {/* Inventory Management Section - NEW */}
+          <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4 pt-4 flex items-center gap-2">
+            <FaBoxes /> Inventory Management
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormInput
+              name="stock_quantity"
+              type="number"
+              min="0"
+              placeholder="Stock Quantity"
+              value={form.stock_quantity}
+              onChange={handleChange}
+            />
+            <FormInput
+              name="low_stock_threshold"
+              type="number"
+              min="0"
+              placeholder="Low Stock Alert (Default: 5)"
+              value={form.low_stock_threshold}
+              onChange={handleChange}
+            />
+            <FormInput
+              name="sku"
+              placeholder="SKU (Optional - Auto-generated)"
+              value={form.sku}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              name="track_inventory"
+              checked={form.track_inventory}
+              onChange={handleChange}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <label className="text-gray-700 font-medium">
+              Track Inventory (Uncheck if stock is unlimited or not tracked)
+            </label>
+          </div>
+
           {/* Product Settings */}
           <h3 className="text-xl font-bold text-blue-800 border-b pb-2 mb-4 pt-4">
             Product Settings
@@ -516,6 +654,7 @@ function AddProductModal({ open, onClose, mutate }) {
             <FormInput
               name="cost_price"
               type="number"
+              min="0"
               placeholder="Cost Price (₦)"
               value={form.cost_price}
               onChange={handleChange}
@@ -595,7 +734,7 @@ function DeleteConfirmModal({
   );
 }
 
-// View Product Modal
+// View Product Modal - UPDATED with stock info
 function ViewProductModal({ open, onClose, product }) {
   if (!open || !product) return null;
 
@@ -673,6 +812,22 @@ function ViewProductModal({ open, onClose, product }) {
               >
                 {product.status}
               </span>
+            </div>
+            <div>
+              <p className="text-gray-500">Stock Status</p>
+              <StockBadge
+                stock={product.stock_quantity}
+                threshold={product.low_stock_threshold}
+                trackInventory={product.track_inventory}
+              />
+            </div>
+            <div>
+              <p className="text-gray-500">Stock Quantity</p>
+              <p className="font-semibold">{product.stock_quantity ?? "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">SKU</p>
+              <p className="font-semibold text-xs">{product.sku || "N/A"}</p>
             </div>
             <div>
               <p className="text-gray-500">Featured</p>
@@ -784,6 +939,7 @@ export default function AdminProductsPage() {
     "Category",
     "Condition",
     "Price",
+    "Stock",
     "Status",
     "Actions",
   ];
@@ -810,6 +966,13 @@ export default function AdminProductsPage() {
             </div>
             <div className="text-xs text-gray-400">
               {p.category} • {p.condition}
+            </div>
+            <div className="mt-1">
+              <StockBadge
+                stock={p.stock_quantity}
+                threshold={p.low_stock_threshold}
+                trackInventory={p.track_inventory}
+              />
             </div>
           </div>
         </div>
@@ -1002,6 +1165,14 @@ export default function AdminProductsPage() {
 
                   <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-green-700">
                     {formatCurrency(p.price)}
+                  </td>
+
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <StockBadge
+                      stock={p.stock_quantity}
+                      threshold={p.low_stock_threshold}
+                      trackInventory={p.track_inventory}
+                    />
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap">

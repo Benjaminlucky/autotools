@@ -18,33 +18,38 @@ export const CartProvider = ({ children }) => {
   }, [cart]);
 
   const addToCart = (product, quantity) => {
-    const existingItem = cart.find((item) => item.id === product.id);
+    // FIX: Use _id instead of id to match MongoDB schema
+    const productId = product._id || product.id;
+    const existingItem = cart.find(
+      (item) => (item._id || item.id) === productId
+    );
 
     if (existingItem) {
       setCart(
         cart.map((item) =>
-          item.id === product.id
+          (item._id || item.id) === productId
             ? { ...item, quantity: item.quantity + quantity }
             : item
         )
       );
     } else {
-      setCart([...cart, { ...product, quantity }]);
+      // Ensure the product has _id when added to cart
+      setCart([...cart, { ...product, _id: productId, quantity }]);
     }
   };
 
   const removeFromCart = (id) => {
-    setCart(cart.filter((item) => item.id !== id));
+    // FIX: Handle both _id and id
+    setCart(cart.filter((item) => (item._id || item.id) !== id));
   };
 
-  // FIX: Added clearCart function
   const clearCart = () => {
     setCart([]);
   };
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, removeFromCart, clearCart }} // FIX: Exported clearCart
+      value={{ cart, addToCart, removeFromCart, clearCart }}
     >
       {children}
     </CartContext.Provider>
